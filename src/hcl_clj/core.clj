@@ -13,6 +13,6 @@
     m))
 
 (defn parse
-  [file]
-  (let [m (.parse (HCLParser.) file)]
+  [^String s]
+  (let [m (.parse (HCLParser.) s)]
     (lhm->pam m)))
