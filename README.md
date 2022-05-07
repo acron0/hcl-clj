@@ -1,6 +1,6 @@
 # hcl-clj
 
-Convert HashiCorp HCL to Clojure hash map.
+Convert HashiCorp HCL to Clojure hash map (via [HCL4J](https://github.com/bertramdev/hcl4j))
 
 ``` hcl
 job "build" {
