@@ -1,6 +1,36 @@
 # hcl-clj
 
-FIXME: description
+Convert HashiCorp HCL to Clojure hash map.
+
+``` hcl
+job "build" {
+  datacenters = [
+      "ap-southeast-2"
+  ]
+  update {
+      stagger = "30s"
+      max-parallel = 1
+  }
+  group "load-balancers" {
+      count = 1
+      restart {
+            attempts = 10
+      }
+  }
+
+```
+becomes
+
+``` clojure
+{:job
+  {:build
+    {:datacenters ["ap-southeast-2"]
+     :update {:stagger "30s"
+              :max-parallel 1.0}
+     :group {:load-balancers
+               {:count 1.0
+                :restart {:attempts 10.0}}}}}}
+```
 
 ## Installation
 
