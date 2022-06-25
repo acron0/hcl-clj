@@ -1,6 +1,7 @@
 # hcl-clj
 
 Convert HashiCorp HCL to Clojure hash map.
+Written in pure Clojure, with GraalVM in mind (no Java interop).
 
 ``` hcl
 job "build" {

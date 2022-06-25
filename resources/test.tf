@@ -1,14 +1,14 @@
 job "build" {
   datacenters = [
-      "ap-southeast-2"
+    "ap-southeast-1", "ap-southeast-2"
   ]
   update {
-      stagger = "30s"
-      max-parallel = 1
+    stagger = "30s"
+    max-parallel = 1
   }
   group "load-balancers" {
-      count = 1
-      restart {
-            attempts = 10
-      }
+    count = 1
+    restart {
+      attempts = 10
+    }
   }

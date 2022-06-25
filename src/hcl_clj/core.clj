@@ -1,6 +1,8 @@
 (ns hcl-clj.core
   (:require [clojure.java.io :as io]
-            [clojure.walk :as walk])
+            [clojure.walk :as walk]
+            [hcl-clj.lexer :as hcl-lexer])
+
   (:import [com.bertramlabs.plugins.hcl4j HCLParser]))
 
 (defn- lhm->pam
@@ -16,3 +18,10 @@
   [^String s]
   (let [m (.parse (HCLParser.) s)]
     (lhm->pam m)))
+
+;;
+
+(defn parse*
+  [^String s]
+  (-> s
+      (hcl-lexer/str->tokens)))
