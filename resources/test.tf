@@ -5,8 +5,9 @@ job "build" {
   update {
     stagger = "30s"
     max-parallel = 1
+    immediately = true
   }
-  group "load-balancers" {
+  group 'load-balancers' {
     count = 1
     restart {
       attempts = 10

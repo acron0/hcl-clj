@@ -13,6 +13,13 @@
              {:count 1.0
               :restart {:attempts 10.0}}}}}})
 
-(deftest test
+(deftest core-test
   (testing "Parsing the test file matches expected outcome"
-    (is (= expected-outcome (hcl-clj/parse* (slurp (io/resource "test.tf")))))))
+    (is (= expected-outcome (hcl-clj/parse (slurp (io/resource "test.tf")))))))
+
+(comment
+  (require '[hcl-clj.lexer :as hcl-lexer])
+  (require '[hcl-clj.ast :as hcl-ast])
+  (def foo (slurp (io/resource "test.tf")))
+  (def tokens (hcl-lexer/str->tokens foo))
+  (def ast (hcl-ast/tokens->ast tokens)))
