@@ -13,16 +13,21 @@
 (#{:scope-close :list-close :eof} type))
 
 (defn realised-scope?
-[{:keys [type]}]
-(= :scope type))
+  [{:keys [type]}]
+  (= :scope type))
+
+(defn list-scope?
+  [{:keys [type scope-type]}]
+  (and (= :scope type)
+       (= :list scope-type)))
 
 (defn scope-type
-[{:keys [type]}]
-(cond
-  (#{:scope-open :scope-close} type) :block
-  (#{:list-open :list-close} type)   :list
-  (#{:sof :eof} type)                :file
-  :else                              (throw (Exception. (str "Couldn't deduce scope type for " type)))))
+  [{:keys [type]}]
+  (cond
+    (#{:scope-open :scope-close} type) :block
+    (#{:list-open :list-close} type)   :list
+    (#{:sof :eof} type)                :file
+    :else                              (throw (Exception. (str "Couldn't deduce scope type for " type)))))
 
 (defn literal?
   [{:keys [type]}]
@@ -33,7 +38,8 @@
   (and nt at vt
        (= :keyword (:type nt))
        (= :assignment (:type at))
-       (literal? vt))) ;; TODO what about if it's a list???
+       (or (literal? vt)
+           (list-scope? vt))))
 
 (defn scope-name?
   [[kt & ts]]
