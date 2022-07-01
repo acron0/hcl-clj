@@ -10,7 +10,7 @@
   (str/replace (first s) #"\s+" string-literal-space-substitution))
 
 (def string-delimiter-re "['\"]")
-(def valid-characters-re-* "[a-zA-Z0-9\\-_]*")
+(def valid-characters-re-* "[a-zA-Z0-9\\-_\\s]+")
 
 (defn re-patterns [& s]
   (re-pattern (apply str s)))
@@ -35,13 +35,13 @@
    ;;
    [string? :keyword]])
 
-(def single-character-tokens
+(def single-character-lexemes
   #{:scope-open :scope-close :list-open :list-close :assignment})
 
-(def single-character-token-split-re
+(def single-character-lexemes-split-re
   (str/join "|"
             (reduce (fn [a [c t]]
-                      (if (single-character-tokens t)
+                      (if (single-character-lexemes t)
                         (conj a (str "\\" c)) a)) [] tokens)))
 
 ;;
@@ -72,6 +72,8 @@
   ;; but we've already identified the token at this point so we are
   ;; _relatively_ sure it's just a number... so it's probably fine :)
   (edn/read-string lex))
+
+;;
 
 (defn token
   ([t l]
@@ -124,8 +126,8 @@
           (-> s
               ;; remove line comments
               (str/replace #"\/{2}.*|#.*" "")
-              ;; add padding
-              (str/replace (re-pattern single-character-token-split-re) #(str " " %1 " "))
+              ;; add padding to single character lexemes
+              (str/replace (re-pattern single-character-lexemes-split-re) #(str " " %1 " "))
               ;; we add a space so the split still works
               (str/replace #"\n" (str " " internal-newline-substitute))
               (str/replace  (re-patterns string-delimiter-re

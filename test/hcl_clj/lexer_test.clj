@@ -32,6 +32,14 @@
           expected {:type :string-literal :line 1 :content "bar baz"}]
       (is (= expected (nth (:tokens (str->tokens hcl)) 2) ))))
 
+  (testing "The expcted tokens are generated - multiple strings"
+    (let [hcl
+          "foo \"bar\" \"baz\" {
+          }"
+          expected '({:type :string-literal :line 1 :content "bar"}
+                     {:type :string-literal :line 1 :content "baz"})]
+      (is (= expected (take 2 (drop 2 (:tokens (str->tokens hcl))))))))
+
   (testing "The expcted tokens are generated - multiple roots"
     (let [hcl
           "foo \"bar\" {
@@ -52,7 +60,7 @@
       (is (= expected (str->tokens hcl) )))))
 
 (deftest weird-syntax-test
-  (testing "no spaces"
+  (testing "no spaces in assignments"
     (let [hcl
           "foo \"bar\" {
              baz=123
@@ -61,4 +69,11 @@
           expected '({:type :number-literal :line 2 :content 123}
                      {:type :number-literal :line 3 :content 456})]
       (is (= expected (filter #(= :number-literal (:type %))
-                              (:tokens (str->tokens hcl))) )))))
+                              (:tokens (str->tokens hcl))) ))))
+
+  (testing "no spaces in blocks"
+    (let [hcl
+          "foo\"bar\"{}"
+          expected '({:type :keyword :line 1 :content "foo"}
+                     {:type :string-literal :line 1 :content "bar"})]
+      (is (= expected (:tokens (str->tokens hcl)) )))))

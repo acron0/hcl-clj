@@ -93,6 +93,113 @@
                     (inc (count tks))]]
       (is (= expected (capture-scope tks))))))
 
+(deftest ast-name-scope-test
+  (testing "We can apply a name to a scope - basic"
+    (let [hcl
+          "foo {
+             baz = 123
+          }"
+          tks (:tokens (lexer/str->tokens hcl))
+          expected (file [{:type :scope,
+                           :line 1,
+                           :scope-type :block,
+                           :name "foo"
+                           :content [{:type :keyword, :line 2, :content "baz"}
+                                     {:type :assignment, :line 2}
+                                     {:type :number-literal, :line 2, :content 123}]}])]
+      (is (= expected (-> tks
+                          (capture-scope)
+                          (name-scope))))))
+  ;;
+  (testing "We can apply a name to a scope - basic 2"
+    (let [hcl
+          "foo \"bar\" \"lol\" {
+             baz = 123
+          }"
+          tks (:tokens (lexer/str->tokens hcl))
+          expected (file [{:type :scope,
+                           :line 1,
+                           :scope-type :block,
+                           :name "foo.bar.lol"
+                           :content [{:type :keyword, :line 2, :content "baz"}
+                                     {:type :assignment, :line 2}
+                                     {:type :number-literal, :line 2, :content 123}]}])]
+      (is (= expected (-> tks
+                          (capture-scope)
+                          (name-scope))))))
+  ;;
+  (testing "We can apply a name to a scope - nested"
+    (let [hcl
+          "foo \"bar\" {
+             baz {
+               qux = 123
+             }
+           }"
+          tks (:tokens (lexer/str->tokens hcl))
+          expected (file [{:type :scope,
+                           :line 1,
+                           :scope-type :block,
+                           :name "foo.bar"
+                           :content [{:type :scope,
+                                      :line 2,
+                                      :scope-type :block,
+                                      :name "baz"
+                                      :content [{:type :keyword, :line 3, :content "qux"}
+                                                {:type :assignment, :line 3}
+                                                {:type :number-literal, :line 3, :content 123}]}]}])]
+      (is (= expected (-> tks
+                          (capture-scope)
+                          (name-scope)))))))
+
+(deftest ast-assignments-test
+  (testing "We can group assignment tokens - basic"
+    (let [hcl
+          "foo {
+             bar = 123
+          }"
+          tks (:tokens (lexer/str->tokens hcl))
+          expected (file [{:type :scope,
+                           :line 1,
+                           :scope-type :block,
+                           :name "foo"
+                           :content [{:type :key-value-pair,
+                                      :line 2,
+                                      :name "bar"
+                                      :content {:type :number-literal, :line 2, :content 123}}]}])]
+      (is (= expected (-> tks
+                          (capture-scope)
+                          (name-scope)
+                          (realise-assignments))))))
+  ;;
+  (testing "We can group assignment tokens - basic 2"
+    (let [hcl
+          "foo {
+             bar = 123
+             baz = 456,
+             qux: 789
+          }"
+          tks (:tokens (lexer/str->tokens hcl))
+          expected (file [{:type :scope,
+                           :line 1,
+                           :scope-type :block,
+                           :name "foo"
+                           :content [{:type :key-value-pair,
+                                      :line 2,
+                                      :name "bar"
+                                      :content {:type :number-literal, :line 2, :content 123}}
+                                     {:type :key-value-pair,
+                                      :line 3,
+                                      :name "baz"
+                                      :content {:type :number-literal, :line 3, :content 456}}
+                                     {:type :key-value-pair,
+                                      :line 4,
+                                      :name "qux"
+                                      :content {:type :number-literal, :line 4, :content 789}}]}])]
+      (is (= expected (-> tks
+                          (capture-scope)
+                          (name-scope)
+                          (realise-assignments)))))))
+
 
 (comment
   (def tks [{:type :sof, :line 1}
