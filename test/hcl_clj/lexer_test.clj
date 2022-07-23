@@ -76,4 +76,4 @@
           "foo\"bar\"{}"
           expected '({:type :keyword :line 1 :content "foo"}
                      {:type :string-literal :line 1 :content "bar"})]
-      (is (= expected (:tokens (str->tokens hcl)) )))))
+      (is (= expected (take 2 (drop 1 (:tokens (str->tokens hcl)))) )))))

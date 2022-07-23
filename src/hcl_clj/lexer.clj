@@ -128,8 +128,11 @@
               (str/replace #"\/{2}.*|#.*" "")
               ;; add padding to single character lexemes
               (str/replace (re-pattern single-character-lexemes-split-re) #(str " " %1 " "))
+              ;; add padding to string literals
+              (str/replace (re-pattern "\".*\"") #(str " " %1 " "))
               ;; we add a space so the split still works
               (str/replace #"\n" (str " " internal-newline-substitute))
+              ;;
               (str/replace  (re-patterns string-delimiter-re
                                          valid-characters-re-*
                                          "(\\s+)"
