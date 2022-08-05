@@ -23,12 +23,10 @@
                           :key-value-pair  (collapse (->sequential (-> node :content)))))]
       (deep-merge a (reduce (fn [a' x] (hash-map (keyword x) a')) dst (reverse (butlast names)))))
     ;; unnamed nodes - literals, lists
-    (let []
-
-      (if (= :scope (:type node))
-        (reduce (fn [a n] (conj a (process-node {} n))) [] (:content node))
-        ;; literals
-        (:content node)))))
+    (if (= :scope (:type node))
+      (reduce (fn [a n] (conj a (process-node {} n))) [] (:content node))
+      ;; literals
+      (:content node))))
 
 (defn collapse
   [nodes]
