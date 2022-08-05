@@ -9,6 +9,7 @@ job "build" {
   }
   group 'load-balancers' {
     count = 1
+    ratio = 12.34
     restart {
       attempts = 10
     }

@@ -14,6 +14,24 @@
       (is (= expected (filter #(= :number-literal (:type %))
                               (:tokens (str->tokens hcl))) ))))
 
+  (testing "The expcted tokens are generated - basic string literal"
+    (let [hcl
+          "foo {
+             baz = \"alice\"
+             qux: \"bob\"
+          }"
+          expected '({:type :string-literal :line 2 :content "alice"}
+                     {:type :string-literal :line 3 :content "bob"})]
+      (is (= expected (filter #(= :string-literal (:type %))
+                              (:tokens (str->tokens hcl))) ))))
+
+  (testing "The expcted tokens are generated - strange string literal"
+    (let [s "~> 1.3.0"
+          hcl (format "foo { baz = \"%s\" }" s)
+          expected (list {:type :string-literal :line 1 :content s})]
+      (is (= expected (filter #(= :string-literal (:type %))
+                              (:tokens (str->tokens hcl))) ))))
+
   (testing "The expcted tokens are generated - basic boolean literal"
     (let [hcl
           "foo \"bar\" {

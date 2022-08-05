@@ -17,16 +17,15 @@
              baz = 123
           }"
           tks (:tokens (lexer/str->tokens hcl))
-          expected [[(file
-                       [{:type :keyword, :line 1, :content "foo"}
-                        {:type :string-literal, :line 1, :content "bar"}
-                        {:type :scope,
-                         :line 1,
-                         :scope-type :block,
-                         :content [{:type :keyword, :line 2, :content "baz"}
-                                   {:type :assignment, :line 2}
-                                   {:type :number-literal, :line 2, :content 123}]}])]
-                    (inc (count tks))]]
+          expected (file
+                     [{:type :keyword, :line 1, :content "foo"}
+                      {:type :string-literal, :line 1, :content "bar"}
+                      {:type :scope,
+                       :line 1,
+                       :scope-type :block,
+                       :content [{:type :keyword, :line 2, :content "baz"}
+                                 {:type :assignment, :line 2}
+                                 {:type :number-literal, :line 2, :content 123}]}])]
       (is (= expected (capture-scope tks)))))
 
   (testing "We're able to correctly merge tokens and capture scope - nested"
@@ -37,22 +36,22 @@
              }
           }"
           tks (:tokens (lexer/str->tokens hcl))
-          expected [[(file
-                       [{:type :keyword, :line 1, :content "foo"}
-                        {:type :string-literal, :line 1, :content "bar"}
+          expected (file
+                     [{:type :keyword, :line 1, :content "foo"}
+                      {:type :string-literal, :line 1, :content "bar"}
+                      {:type :scope,
+                       :line 1,
+                       :scope-type :block,
+                       :content
+                       [{:type :keyword, :line 2, :content "baz"}
                         {:type :scope,
-                         :line 1,
+                         :line 2,
                          :scope-type :block,
                          :content
-                         [{:type :keyword, :line 2, :content "baz"}
-                          {:type :scope,
-                           :line 2,
-                           :scope-type :block,
-                           :content
-                           [{:type :keyword, :line 3, :content "qux"}
-                            {:type :assignment, :line 3}
-                            {:type :number-literal, :line 3, :content 123}]}]}])]
-                    (inc (count tks))]]
+                         [{:type :keyword, :line 3, :content "qux"}
+                          {:type :assignment, :line 3}
+                          {:type :number-literal, :line 3, :content 123}]}]}])
+          ]
       (is (= expected (capture-scope tks)))))
 
   (testing "We're able to correctly merge tokens and capture scope - nested, double root"
@@ -66,31 +65,31 @@
             charlie = \"danny\"
           }"
           tks (:tokens (lexer/str->tokens hcl))
-          expected [[(file
-                       [{:type :keyword, :line 1, :content "foo"}
-                        {:type :string-literal, :line 1, :content "bar"}
+          expected (file
+                     [{:type :keyword, :line 1, :content "foo"}
+                      {:type :string-literal, :line 1, :content "bar"}
+                      {:type :scope,
+                       :line 1,
+                       :scope-type :block,
+                       :content
+                       [{:type :keyword, :line 2, :content "baz"}
                         {:type :scope,
-                         :line 1,
+                         :line 2,
                          :scope-type :block,
                          :content
-                         [{:type :keyword, :line 2, :content "baz"}
-                          {:type :scope,
-                           :line 2,
-                           :scope-type :block,
-                           :content
-                           [{:type :keyword, :line 3, :content "qux"}
-                            {:type :assignment, :line 3}
-                            {:type :number-literal, :line 3, :content 123}]}]}
-                        {:type :keyword, :line 6, :content "alice"}
-                        {:type :string-literal, :line 6, :content "bob"}
-                        {:type :scope,
-                         :line 6,
-                         :scope-type :block,
-                         :content
-                         [{:type :keyword, :line 7, :content "charlie"}
-                          {:type :assignment, :line 7}
-                          {:type :string-literal, :line 7, :content "danny"}]}])]
-                    (inc (count tks))]]
+                         [{:type :keyword, :line 3, :content "qux"}
+                          {:type :assignment, :line 3}
+                          {:type :number-literal, :line 3, :content 123}]}]}
+                      {:type :keyword, :line 6, :content "alice"}
+                      {:type :string-literal, :line 6, :content "bob"}
+                      {:type :scope,
+                       :line 6,
+                       :scope-type :block,
+                       :content
+                       [{:type :keyword, :line 7, :content "charlie"}
+                        {:type :assignment, :line 7}
+                        {:type :string-literal, :line 7, :content "danny"}]}])
+          ]
       (is (= expected (capture-scope tks))))))
 
 (deftest ast-name-scope-test
@@ -121,6 +120,23 @@
                            :line 1,
                            :scope-type :block,
                            :name "foo.bar.lol"
+                           :content [{:type :keyword, :line 2, :content "baz"}
+                                     {:type :assignment, :line 2}
+                                     {:type :number-literal, :line 2, :content 123}]}])]
+      (is (= expected (-> tks
+                          (capture-scope)
+                          (name-scope))))))
+  ;;
+  (testing "We can apply a name to a scope - basic 3 - dots in name"
+    (let [hcl
+          "foo \"bar\" \"lol\" \"aaa.bbb\" {
+             baz = 123
+          }"
+          tks (:tokens (lexer/str->tokens hcl))
+          expected (file [{:type :scope,
+                           :line 1,
+                           :scope-type :block,
+                           :name "foo.bar.lol.aaa.bbb" ;; TODO do we actually want this? it
                            :content [{:type :keyword, :line 2, :content "baz"}
                                      {:type :assignment, :line 2}
                                      {:type :number-literal, :line 2, :content 123}]}])]

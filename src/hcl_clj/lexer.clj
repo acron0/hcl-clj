@@ -5,12 +5,29 @@
 (def internal-newline-substitute "__<newline>__")
 (def internal-newline-substitute-token-type :newline)
 
-(def string-literal-space-substitution "_<space>_")
+(def string-literal-space-substitution "__<space>__")
 (defn string-literal-space-substitution-fn [s]
   (str/replace (first s) #"\s+" string-literal-space-substitution))
 
 (def string-delimiter-re "['\"]")
-(def valid-characters-re-* "[a-zA-Z0-9\\-_\\s]+")
+(def valid-characters-re-*
+  (str "["
+       (str/join ["a-z"
+                  "A-Z"
+                  "0-9"
+                  "-"
+                  "_"
+                  ","
+                  "~"
+                  ";"
+                  "\\."
+                  "\\<"
+                  "\\>"
+                  "\\?"
+                  "\\!"
+                  "\\/"
+                  "\\s"])
+       "]+"))
 
 (defn re-patterns [& s]
   (re-pattern (apply str s)))

@@ -3,23 +3,29 @@
             [clojure.test :refer :all]
             [hcl-clj.core :as hcl-clj]))
 
-(def expected-outcome
-  {:job
-   {:build
-    {:datacenters ["ap-southeast-2"]
-     :update {:stagger "30s"
-              :max-parallel 1.0}
-     :group {:load-balancers
-             {:count 1.0
-              :restart {:attempts 10.0}}}}}})
+(deftest basic-core-test
+  (testing "Parsing the test file matches expected outcome - basic"
+    (let [expected-outcome {:job
+                            {:build
+                             {:datacenters ["ap-southeast-1" "ap-southeast-2"]
+                              :update {:stagger "30s"
+                                       :max-parallel 1
+                                       :immediately true}
+                              :group {:load-balancers
+                                      {:ratio 12.34
+                                       :count 1
+                                       :restart {:attempts 10}}}}}}]
+      (is (= expected-outcome (hcl-clj/parse (slurp (io/resource "test.tf"))))))))
 
-(deftest core-test
-  (testing "Parsing the test file matches expected outcome"
-    (is (= expected-outcome (hcl-clj/parse (slurp (io/resource "test.tf")))))))
+(deftest advanced-core-test
+  (testing "Parsing the test file matches expected outcome - advanced"
+    (let [expected-outcome {}]
+      (is (= expected-outcome (hcl-clj/parse (slurp (io/resource "vmware.tf"))))))))
 
 (comment
   (require '[hcl-clj.lexer :as hcl-lexer])
   (require '[hcl-clj.ast :as hcl-ast])
   (def foo (slurp (io/resource "test.tf")))
   (def tokens (hcl-lexer/str->tokens foo))
-  (def ast (hcl-ast/tokens->ast tokens)))
+  (def ast (hcl-ast/tokens->ast tokens))
+  (hcl-clj/parse (slurp (io/resource "test.tf"))))
