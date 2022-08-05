@@ -25,8 +25,19 @@
       (is (= expected (filter #(= :string-literal (:type %))
                               (:tokens (str->tokens hcl))) ))))
 
+  (testing "The expcted tokens are generated - basic string literal with spaces"
+    (let [hcl
+          "foo {
+             baz = \"alice with a lot of spaces\"
+             qux: \"bob with a lot of spaces\"
+          }"
+          expected '({:type :string-literal :line 2 :content "alice with a lot of spaces"}
+                     {:type :string-literal :line 3 :content "bob with a lot of spaces"})]
+      (is (= expected (filter #(= :string-literal (:type %))
+                              (:tokens (str->tokens hcl))) ))))
+
   (testing "The expcted tokens are generated - strange string literal"
-    (let [s "~> 1.3.0"
+    (let [s "~> 1.3.0 <foo> /bar/ \\baz\\"
           hcl (format "foo { baz = \"%s\" }" s)
           expected (list {:type :string-literal :line 1 :content s})]
       (is (= expected (filter #(= :string-literal (:type %))
