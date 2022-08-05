@@ -3,6 +3,13 @@
 
 (defn ->sequential [x] (if (sequential? x) x [x]))
 
+;; https://gist.github.com/danielpcox/c70a8aa2c36766200a95
+(defn deep-merge
+  [a b]
+  (if (map? a)
+    (into a (for [[k v] b] [k (deep-merge (a k) v)]))
+    b))
+
 (declare collapse)
 
 (defn process-node
@@ -14,7 +21,7 @@
                         (condp = (:type node)
                           :scope           (collapse (:content node))
                           :key-value-pair  (collapse (->sequential (-> node :content)))))]
-      (merge a (reduce (fn [a' x] (hash-map (keyword x) a')) dst (reverse (butlast names)))))
+      (deep-merge a (reduce (fn [a' x] (hash-map (keyword x) a')) dst (reverse (butlast names)))))
     ;; unnamed nodes - literals, lists
     (let []
 
