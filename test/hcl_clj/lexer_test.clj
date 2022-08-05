@@ -73,7 +73,7 @@
     (let [hcl
           "foo \"bar\" {
           }
-          baz \"qux\" {
+baz \"qux\" {
           }"
           expected {:lines 4
                     :tokens [{:type :sof :line 1}

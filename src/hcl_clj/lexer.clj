@@ -141,7 +141,7 @@
        (reduce (fn [{:keys [string lookup idx] :as d}
                     [match _group]]
                  (-> d
-                     (update :string str/replace (re-pattern (str/re-quote-replacement match)) (format "__<string_%d>__" idx))
+                     (update :string str/replace match (format "__<string_%d>__" idx))
                      (update :lookup assoc idx match)
                      (update :idx inc)))
                {:string s :lookup {} :idx 1})))
@@ -168,7 +168,7 @@
                 ;; add padding to string literals
                 (str/replace (re-pattern "\".*\"") #(str " " %1 " "))
                 ;; we add a space so the split still works
-                (str/replace #"\n" (str " " internal-newline-substitute))
+                (str/replace #"\n" (str " " internal-newline-substitute " "))
                 ;; we split against spacing characters
                 (str/split (re-pattern "\\s|\\n|\\r|,"))
                 ;; replace string literals
