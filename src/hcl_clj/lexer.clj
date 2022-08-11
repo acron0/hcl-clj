@@ -145,16 +145,22 @@
                   (-> d
                       (update :string str/replace match (format "__<string_%d>__" idx))
                       (update :lookup assoc idx (process-match-fn match))
-                      ;; we don't really want to use match above as it wont work for miultilines, but if we don't we lose the ability to distinguish between a string-literal and a keyword, although maybe the tokenizer just needs to improve?
                       (update :idx inc)))
                 m))))
 
 (defn remove-string-literals
   [s]
   (-> {:string s :lookup {} :idx 1}
+      ;; normal string literal
       (remove-string-literals-re #"\"(.*?)\"")
+      ;; EOL, without stripping
       (remove-string-literals-re #"(?s)\<\<EOL(.*)EOL"
-                                 #(str/replace % #"(^<<EOL\n*\s*)|(\s*\n*EOL$)" "\""))))
+                                 #(str/replace % #"(^<<EOL\n*)|(\s*\n*EOL$)" "\""))
+      ;; EOL, with stripping
+      (remove-string-literals-re #"(?s)\<\<\-EOL(.*)EOL"
+                                 #(-> %
+                                      (str/replace #"(^\<\<\-EOL\n*\s*)|(\s*\n*EOL$)" "\"")
+                                      (str/replace #"\n(\s*)" "\n")))))
 
 (defn replace-string-literals
   [s lookup]

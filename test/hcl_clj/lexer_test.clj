@@ -36,14 +36,29 @@
       (is (= expected (filter #(= :string-literal (:type %))
                               (:tokens (str->tokens hcl))) ))))
 
-  (testing "The expcted tokens are generated - multiline string literal"
+  (testing "The expected tokens are generated - multiline string literal, no stripping"
     (let [hcl
           "foo {
              baz = <<EOL
-This is a cool String
-I love multiple lines
-Don't you?
-EOL
+                   This is a cool String
+                   I love multiple lines
+                   Don't you?
+                   EOL
+          }"
+          expected '({:type :string-literal :line 2 :content "                   This is a cool String
+                   I love multiple lines
+                   Don't you?"})]
+      (is (= expected (filter #(= :string-literal (:type %))
+                              (:tokens (str->tokens hcl))) ))))
+
+  (testing "The expected tokens are generated - multiline string literal, with stripping"
+    (let [hcl
+          "foo {
+             baz = <<-EOL
+                   This is a cool String
+                   I love multiple lines
+                   Don't you?
+                   EOL
           }"
           expected '({:type :string-literal :line 2 :content "This is a cool String
 I love multiple lines
