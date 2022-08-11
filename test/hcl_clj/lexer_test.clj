@@ -36,6 +36,21 @@
       (is (= expected (filter #(= :string-literal (:type %))
                               (:tokens (str->tokens hcl))) ))))
 
+  (testing "The expcted tokens are generated - multiline string literal"
+    (let [hcl
+          "foo {
+             baz = <<EOL
+This is a cool String
+I love multiple lines
+Don't you?
+EOL
+          }"
+          expected '({:type :string-literal :line 2 :content "This is a cool String
+I love multiple lines
+Don't you?"})]
+      (is (= expected (filter #(= :string-literal (:type %))
+                              (:tokens (str->tokens hcl))) ))))
+
   (testing "The expcted tokens are generated - strange string literal"
     (let [s "~> 1.3.0 <foo> /bar/ \\baz\\"
           hcl (format "foo { baz = \"%s\" }" s)

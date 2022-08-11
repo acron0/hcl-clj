@@ -75,7 +75,7 @@
 
 (defmethod sanitize :string-literal
   [_ lex]
-  (-> (last (re-find (re-patterns string-delimiter-re "(.*)" string-delimiter-re) lex))
+  (-> (last (re-find (re-patterns "(?s)^" string-delimiter-re "(.*)" string-delimiter-re "$") lex))
       (str/replace (re-pattern string-literal-space-substitution) " ")))
 
 (defmethod sanitize :boolean-literal
@@ -134,17 +134,27 @@
 
 ;;
 
+(defn remove-string-literals-re
+  ([m re]
+   (remove-string-literals-re m re identity))
+  ([m re process-match-fn]
+   (->> (:string m)
+        (re-seq re)
+        (reduce (fn [{:keys [string lookup idx] :as d}
+                     [match group]]
+                  (-> d
+                      (update :string str/replace match (format "__<string_%d>__" idx))
+                      (update :lookup assoc idx (process-match-fn match))
+                      ;; we don't really want to use match above as it wont work for miultilines, but if we don't we lose the ability to distinguish between a string-literal and a keyword, although maybe the tokenizer just needs to improve?
+                      (update :idx inc)))
+                m))))
+
 (defn remove-string-literals
   [s]
-  (->> s
-       (re-seq #"\"(.*?)\"")
-       (reduce (fn [{:keys [string lookup idx] :as d}
-                    [match _group]]
-                 (-> d
-                     (update :string str/replace match (format "__<string_%d>__" idx))
-                     (update :lookup assoc idx match)
-                     (update :idx inc)))
-               {:string s :lookup {} :idx 1})))
+  (-> {:string s :lookup {} :idx 1}
+      (remove-string-literals-re #"\"(.*?)\"")
+      (remove-string-literals-re #"(?s)\<\<EOL(.*)EOL"
+                                 #(str/replace % #"(^<<EOL\n*\s*)|(\s*\n*EOL$)" "\""))))
 
 (defn replace-string-literals
   [s lookup]
@@ -175,12 +185,12 @@
                 (replace-string-literals lookup)))))
 
 (defn str->tokens
-[s]
-(let [lexemes (str->lexemes s)
-      tokens  (reduce lexeme->token empty-token-container lexemes)]
-;; 1. having an sof and eof token makes our life a little easier
-;; 2. remove the newline tokens
-(-> tokens
-    (update :tokens #(into [sof-token] %))
-    (update :tokens #(conj % (eof-token (or (-> % last :line) 1))))
-    (update :tokens #(remove (fn [t] (= internal-newline-substitute-token-type (:type t))) %)))))
+  [s]
+  (let [lexemes (str->lexemes s)
+        tokens  (reduce lexeme->token empty-token-container lexemes)]
+    ;; 1. having an sof and eof token makes our life a little easier
+    ;; 2. remove the newline tokens
+    (-> tokens
+        (update :tokens #(into [sof-token] %))
+        (update :tokens #(conj % (eof-token (or (-> % last :line) 1))))
+        (update :tokens #(remove (fn [t] (= internal-newline-substitute-token-type (:type t))) %)))))
