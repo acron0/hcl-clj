@@ -182,10 +182,7 @@
                                       :line 2,
                                       :name "bar"
                                       :content {:type :number-literal, :line 2, :content 123}}]}])]
-      (is (= expected (-> tks
-                          (capture-scope)
-                          (name-scope)
-                          (realise-assignments))))))
+      (is (= expected (tokens->ast {:tokens tks})))))
   ;;
   (testing "We can group assignment tokens - basic 2"
     (let [hcl
@@ -211,11 +208,9 @@
                                       :line 4,
                                       :name "qux"
                                       :content {:type :number-literal, :line 4, :content 789}}]}])]
-      (is (= expected (-> tks
-                          (capture-scope)
-                          (name-scope)
-                          (realise-assignments))))))
-  ;;
+      (is (= expected (tokens->ast {:tokens tks}))))))
+
+(deftest lists
   (testing "We can group assignment tokens - lists"
     (let [hcl
           "foo {
@@ -235,10 +230,7 @@
                                                 :content [{:type :number-literal, :line 2, :content 1}
                                                           {:type :number-literal, :line 2, :content 2}
                                                           {:type :number-literal, :line 2, :content 3}]}}]}])]
-      (is (= expected (-> tks
-                          (capture-scope)
-                          (name-scope)
-                          (realise-assignments)))))))
+      (is (= expected (tokens->ast {:tokens tks}))))))
 
 
 (comment

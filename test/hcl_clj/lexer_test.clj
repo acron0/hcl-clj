@@ -140,4 +140,11 @@ Don't you?"})]
                              {:type :scope-open, :line 3}
                              {:type :scope-close, :line 4}
                              {:type :eof, :line 4}]}]
-      (is (= expected (str->tokens hcl))))))
+      (is (= expected (str->tokens hcl)))))
+
+  (testing "Root level attributes"
+    (let [hcl "foo = \"bar\""
+          expected '({:type :keyword :line 1 :content "foo"}
+                     {:type :assignment :line 1}
+                     {:type :string-literal :line 1 :content "bar"})]
+      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl)))))))))

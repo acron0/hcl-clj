@@ -13,8 +13,9 @@
 (#{:scope-close :list-close :eof} type))
 
 (defn realised-scope?
-  [{:keys [type]}]
-  (= :scope type))
+  [{:keys [type scope-type]}]
+  (and (= :scope type)
+       (not= :list scope-type)))
 
 (defn list-scope?
   [{:keys [type scope-type]}]
@@ -44,6 +45,7 @@
 (defn scope-name?
   [[kt & ts]]
   ;; a keyword followed by zero or more string-literals
+  ;; and possibly an assignment
   (and (= :keyword (:type kt))
        (boolean
          (loop [tokens ts
@@ -51,6 +53,8 @@
            (when-let [ft (first tokens)]
              (cond (= :string-literal (:type ft))
                    (recur (rest tokens) (conj results (:type ft)))
+                   (= :assignment (:type ft))
+                   (recur (rest tokens) results)
                    ;; NB. `every?` on an empty collection returns true
                    (realised-scope? ft) (every? #{:string-literal} results)
                    ;;
@@ -95,22 +99,26 @@
        [result skip]))))
 
 (defn apply-name-to-scope
-  "We collect scope-preceding keywords and string-literals and collapse them
-  into a string `:name` which is applied to the current scope"
+  "We collect scope-preceding keywords, string-literals and assignment
+  and collapse them into a string `:name` which is applied to the current scope"
   [[kt & ts]]
   ;; a keyword followed by zero or more string-literals
-  (loop [result [(:content kt)]
-         tokens ts]
+  (loop [tokens ts
+         results [(:content kt)]]
+    ;; TODO this fn is very similar to scope-name
     (when-let [ft (first tokens)]
       (cond (= :string-literal (:type ft))
-            (recur (conj result (:content ft)) (rest tokens))
-            (realised-scope? ft) [(assoc ft :name (str/join "." result)) (count result)]
+            (recur (rest tokens) (conj results (:content ft)))
+            (= :assignment (:type ft))
+            (recur (rest tokens) (conj results nil)) ;;
+            ;;
+            (realised-scope? ft) [(assoc ft :name (str/join "." (filter identity results))) (count results)]
             :else (throw (Exception. (str "How have we got here?" (realised-scope? ft) ft )))))))
 
 (defn name-scope
   "Iterates through a list of tokens that has already been scoped (see `capture-scope`).
-  As it detects 'names' (keywords followed by zero or more strng-literals) it applies them
-  to the associated scope block. It operates recursively to work down the tree."
+  As it detects 'names' (keywords followed by zero or more stirng-literals, optionally an assignment)
+  it applies them to the associated scope block. It operates recursively to work down the tree."
   ([scope]
    (update scope
            :content

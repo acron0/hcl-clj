@@ -56,4 +56,39 @@
       (is (= expected (-> hcl
                           (lexer/str->tokens)
                           (ast/tokens->ast)
+                          (ast->map))))))
+
+  (testing "We're able to produce a valid map when there are only vars at the root level"
+    (let [hcl
+          "foo = 123
+           bar = 456"
+          expected {:foo 123
+                    :bar 456}]
+      (is (= expected (-> hcl
+                          (lexer/str->tokens)
+                          (ast/tokens->ast)
+                          (ast->map)))))))
+
+(deftest nested-maps
+  (testing "We're able to nest maps"
+    (let [hcl "foo {
+                 bar { baz = 123 }
+                 qux = 456 }"
+          expected {:foo {:bar {:baz 123}
+                          :qux 456}}]
+      (is (= expected (-> hcl
+                          (lexer/str->tokens)
+                          (ast/tokens->ast)
+                          (ast->map))))))
+
+  (testing "We're able to assign maps to variables (notice assignment `bar =`)"
+    (let [hcl "foo {
+                 bar = { baz = 123 }
+                 qux = 456
+               }"
+          expected {:foo {:bar {:baz 123}
+                          :qux 456}}]
+      (is (= expected (-> hcl
+                          (lexer/str->tokens)
+                          (ast/tokens->ast)
                           (ast->map)))))))
