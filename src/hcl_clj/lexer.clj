@@ -143,7 +143,9 @@
         (reduce (fn [{:keys [string lookup idx] :as d}
                      [match group]]
                   (-> d
-                      (update :string str/replace match (format "__<string_%d>__" idx))
+                      ;; we replace the literal with a placeholder
+                      ;; (plus some whitespace to please the lexer)
+                      (update :string str/replace match (format " __<string_%d>__ " idx))
                       (update :lookup assoc idx (process-match-fn match))
                       (update :idx inc)))
                 m))))
@@ -181,8 +183,6 @@
                 (str/replace #"\/{2}.*|#.*" "")
                 ;; add padding to single character lexemes
                 (str/replace (re-pattern single-character-lexemes-split-re) #(str " " %1 " "))
-                ;; add padding to string literals
-                (str/replace (re-pattern "\".*\"") #(str " " %1 " "))
                 ;; we add a space so the split still works
                 (str/replace #"\n" (str " " internal-newline-substitute " "))
                 ;; we split against spacing characters
