@@ -1,5 +1,7 @@
 # hcl-clj
 
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/acron0/hcl-clj/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/acron0/hcl-clj/tree/master)
+
 Convert HashiCorp HCL to Clojure hash map.
 Written in pure Clojure, with GraalVM in mind (no Java interop).
 
