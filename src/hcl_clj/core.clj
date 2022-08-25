@@ -1,18 +1,11 @@
 (ns hcl-clj.core
-  (:require [clojure.java.io :as io]
-            [clojure.walk :as walk])
-  (:import [com.bertramlabs.plugins.hcl4j HCLParser]))
-
-(defn- lhm->pam
-  [m]
-  (walk/prewalk
-    (fn [x]
-      (if (instance? java.util.LinkedHashMap x)
-        (zipmap (map keyword (.keySet x)) (.values x))
-        x))
-    m))
+  (:require [hcl-clj.ast :as hcl-ast]
+            [hcl-clj.lexer :as hcl-lexer]
+            [hcl-clj.map :as hcl-map]))
 
 (defn parse
   [^String s]
-  (let [m (.parse (HCLParser.) s)]
-    (lhm->pam m)))
+  (-> s
+      (hcl-lexer/str->tokens)
+      (hcl-ast/tokens->ast)
+      (hcl-map/ast->map)))

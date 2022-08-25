@@ -1,6 +1,7 @@
 # hcl-clj
 
-Convert HashiCorp HCL to Clojure hash map (via [HCL4J](https://github.com/bertramdev/hcl4j))
+Convert HashiCorp HCL to Clojure hash map.
+Written in pure Clojure, with GraalVM in mind (no Java interop).
 
 ``` hcl
 job "build" {
@@ -55,6 +56,10 @@ org.clojars.acron0/hcl-clj {:mvn/version "0.1.0"}
 
 (hcl-clj/parse (slurp (io/resource "test.tf")))
 ```
+
+## TODO
+
+* [Interpolation](https://www.terraform.io/language/v1.1.x/configuration-0-11/interpolation)
 
 ## License
 
