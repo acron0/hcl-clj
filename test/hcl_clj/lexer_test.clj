@@ -152,3 +152,17 @@ Don't you?"})]
                      {:type :assignment :line 1}
                      {:type :string-literal :line 1 :content "bar"})]
       (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl)))))))))
+
+(deftest interpolation
+  (testing "We can lex out interpolation literals - strings"
+    (let [hcl "foo = \"${bar}\""
+          expected '({:type :keyword :line 1 :content "foo"}
+                     {:type :assignment :line 1}
+                     {:type :interpolation-literal :line 1 :content "\"${bar}\""})]
+      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl))))))))
+  (testing "We can lex out interpolation literals - raw"
+    (let [hcl "foo = ${bar}"
+          expected '({:type :keyword :line 1 :content "foo"}
+                     {:type :assignment :line 1}
+                     {:type :interpolation-literal :line 1 :content "${bar}"})]
+      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl)))))))))

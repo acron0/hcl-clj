@@ -38,6 +38,7 @@
   ;; order is important
   ;; token first items can be string matches OR predicates
   ;; NB predicatess should be after string matches
+  ;; TODO add all? https://github.com/hashicorp/hcl/blob/main/hclsyntax/spec.md#operators-and-delimiters
   [["{" :scope-open]
    ["}" :scope-close]
    ["[" :list-open]
@@ -45,6 +46,8 @@
    ["=" :assignment]
    [":" :assignment]
    [internal-newline-substitute internal-newline-substitute-token-type]
+   ;;
+   [(partial re-find (re-patterns string-delimiter-re "?" "\\$\\{.+\\}" string-delimiter-re "?")) :interpolation-literal]
    ;;
    [(partial re-find (re-patterns string-delimiter-re ".*" string-delimiter-re)) :string-literal]
    [(partial re-find #"[0-9\.]+") :number-literal]
@@ -66,12 +69,16 @@
 (defmulti sanitize (comp first vector))
 
 (defmethod sanitize :default
-  [& _]
+  [t lex]
   nil)
 
 (defmethod sanitize :keyword
   [_ lex]
   lex)
+
+(defmethod sanitize :assignment
+  [_ lex]
+  nil)
 
 (defmethod sanitize :string-literal
   [_ lex]
@@ -89,6 +96,10 @@
   ;; but we've already identified the token at this point so we are
   ;; _relatively_ sure it's just a number... so it's probably fine :)
   (edn/read-string lex))
+
+(defmethod sanitize :interpolation-literal
+  [_ lex]
+  (str/trim lex))
 
 ;;
 
@@ -116,13 +127,13 @@
 ;;
 
 (defn lexeme->token-type
-[lex]
-(some (fn [[m-or-p token-type]]
-        (when
-            (or
-              (and (string? m-or-p) (= m-or-p lex))
-              (and (fn? m-or-p) (m-or-p lex)))
-          token-type)) tokens))
+  [lex]
+  (some (fn [[m-or-p token-type]]
+          (when
+              (or
+                (and (string? m-or-p) (= m-or-p lex))
+                (and (fn? m-or-p) (m-or-p lex)))
+            token-type)) tokens))
 
 (defn lexeme->token
   [{:keys [lines] :as a} lex]
@@ -134,10 +145,10 @@
 
 ;;
 
-(defn remove-string-literals-re
-  ([m re]
-   (remove-string-literals-re m re identity))
-  ([m re process-match-fn]
+(defn remove-literals-re
+  ([sf m re]
+   (remove-literals-re sf m re identity))
+  ([sf m re process-match-fn]
    (->> (:string m)
         (re-seq re)
         (reduce (fn [{:keys [string lookup idx] :as d}
@@ -145,10 +156,13 @@
                   (-> d
                       ;; we replace the literal with a placeholder
                       ;; (plus some whitespace to please the lexer)
-                      (update :string str/replace match (format " __<string_%d>__ " idx))
+                      (update :string str/replace match (format sf idx))
                       (update :lookup assoc idx (process-match-fn match))
                       (update :idx inc)))
                 m))))
+
+(def remove-string-literals-re   (partial remove-literals-re " __<string_%d>__ "))
+(def remove-template-literals-re (partial remove-literals-re " __<template_%d>__ "))
 
 (defn remove-string-literals
   [s]
@@ -164,19 +178,32 @@
                                       (str/replace #"(^\<\<\-EOL\n*\s*)|(\s*\n*EOL$)" "\"")
                                       (str/replace #"\n(\s*)" "\n")))))
 
+(defn remove-template-literals
+  [s]
+  (-> {:string s :lookup {} :idx 1}
+      (remove-template-literals-re (re-patterns string-delimiter-re "?" "\\$\\{(.*?)\\}" string-delimiter-re "?"))
+      ))
+
 (defn replace-string-literals
   [s lookup]
   (map (fn [x]
          (if-let [[_ i] (re-find #"__<string_(\d+)>__" x)]
            (get lookup (read-string i) "<ERROR: STRING LITERAL MISSING>") x)) s))
 
+(defn replace-template-literals
+  [s lookup]
+  (map (fn [x]
+         (if-let [[_ i] (re-find #"__<template_(\d+)>__" x)]
+           (get lookup (read-string i) "<ERROR: TEMPLATE LITERAL MISSING>") x)) s))
+
 
 (defn str->lexemes
-  [s]
+  [string]
   ;; TODO this is flaky and we could do with a better way to generate lexemes
   ;; for example, this doesn't respect spaces in string literals so we have to
   ;; pre/post process
-  (let [{:keys [string lookup]} (remove-string-literals s)]
+  (let [{:keys [string] :as tls} (remove-template-literals string)
+        {:keys [string] :as sls} (remove-string-literals string)]
     (remove str/blank?
             (-> string
                 ;; remove line comments
@@ -188,7 +215,10 @@
                 ;; we split against spacing characters
                 (str/split (re-pattern "\\s|\\n|\\r|,"))
                 ;; replace string literals
-                (replace-string-literals lookup)))))
+                (replace-string-literals (:lookup sls))
+                ;; replace template literals
+                (replace-template-literals (:lookup tls))
+                )))) ;
 
 (defn str->tokens
   [s]
