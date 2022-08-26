@@ -154,7 +154,7 @@
   [s]
   (-> {:string s :lookup {} :idx 1}
       ;; normal string literal
-      (remove-string-literals-re #"\"(.*?)\"")
+      (remove-string-literals-re (re-patterns string-delimiter-re "(.*?)" string-delimiter-re))
       ;; EOL, without stripping
       (remove-string-literals-re #"(?s)\<\<EOL(.*)EOL"
                                  #(str/replace % #"(^<<EOL\n*)|(\s*\n*EOL$)" "\""))

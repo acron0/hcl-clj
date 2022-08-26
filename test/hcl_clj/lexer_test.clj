@@ -20,22 +20,26 @@
   (testing "The expcted tokens are generated - basic string literal"
     (let [hcl
           "foo {
-             baz = \"alice\"
-             qux: \"bob\"
+             bar = \"alice\"
+             baz = 'bob'
+             qux: \"charlie\"
           }"
           expected '({:type :string-literal :line 2 :content "alice"}
-                     {:type :string-literal :line 3 :content "bob"})]
+                     {:type :string-literal :line 3 :content "bob"}
+                     {:type :string-literal :line 4 :content "charlie"})]
       (is (= expected (filter #(= :string-literal (:type %))
                               (:tokens (str->tokens hcl))) ))))
 
   (testing "The expcted tokens are generated - basic string literal with spaces"
     (let [hcl
           "foo {
-             baz = \"alice with a lot of spaces\"
-             qux: \"bob with a lot of spaces\"
+             bar = \"alice with a lot of spaces\"
+             baz = 'bob with a lot of spaces'
+             qux: \"charlie with a lot of spaces\"
           }"
           expected '({:type :string-literal :line 2 :content "alice with a lot of spaces"}
-                     {:type :string-literal :line 3 :content "bob with a lot of spaces"})]
+                     {:type :string-literal :line 3 :content "bob with a lot of spaces"}
+                     {:type :string-literal :line 4 :content "charlie with a lot of spaces"})]
       (is (= expected (filter #(= :string-literal (:type %))
                               (:tokens (str->tokens hcl))) ))))
 
