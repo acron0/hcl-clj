@@ -47,9 +47,9 @@
    [":" :assignment]
    [internal-newline-substitute internal-newline-substitute-token-type]
    ;;
-   [(partial re-find (re-patterns string-delimiter-re "?" "\\$\\{.+\\}" string-delimiter-re "?")) :interpolation-literal]
-   ;;
    [(partial re-find (re-patterns string-delimiter-re ".*" string-delimiter-re)) :string-literal]
+   ;; TODO dont use re-patterns for template literal; no need
+   [(partial re-find (re-patterns "\\$\\{.+\\}")) :template-literal]
    [(partial re-find #"[0-9\.]+") :number-literal]
    [(partial re-find #"true|false") :boolean-literal]
    ;;
@@ -97,7 +97,7 @@
   ;; _relatively_ sure it's just a number... so it's probably fine :)
   (edn/read-string lex))
 
-(defmethod sanitize :interpolation-literal
+(defmethod sanitize :template-literal
   [_ lex]
   (str/trim lex))
 
@@ -181,7 +181,8 @@
 (defn remove-template-literals
   [s]
   (-> {:string s :lookup {} :idx 1}
-      (remove-template-literals-re (re-patterns string-delimiter-re "?" "\\$\\{(.*?)\\}" string-delimiter-re "?"))
+      ;; TODO dont use re-patterns for template literal; no need
+      (remove-template-literals-re (re-patterns "\\$\\{(.*?)\\}"))
       ))
 
 (defn replace-string-literals
@@ -202,8 +203,8 @@
   ;; TODO this is flaky and we could do with a better way to generate lexemes
   ;; for example, this doesn't respect spaces in string literals so we have to
   ;; pre/post process
-  (let [{:keys [string] :as tls} (remove-template-literals string)
-        {:keys [string] :as sls} (remove-string-literals string)]
+  (let [{:keys [string] :as sls} (remove-string-literals string)
+        {:keys [string] :as tls} (remove-template-literals string)]
     (remove str/blank?
             (-> string
                 ;; remove line comments
@@ -214,10 +215,10 @@
                 (str/replace #"\n" (str " " internal-newline-substitute " "))
                 ;; we split against spacing characters
                 (str/split (re-pattern "\\s|\\n|\\r|,"))
-                ;; replace string literals
-                (replace-string-literals (:lookup sls))
                 ;; replace template literals
                 (replace-template-literals (:lookup tls))
+                ;; replace string literals
+                (replace-string-literals (:lookup sls))
                 )))) ;
 
 (defn str->tokens

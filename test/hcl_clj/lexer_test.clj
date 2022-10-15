@@ -154,15 +154,41 @@ Don't you?"})]
       (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl)))))))))
 
 (deftest interpolation
-  (testing "We can lex out interpolation literals - strings"
-    (let [hcl "foo = \"${bar}\""
-          expected '({:type :keyword :line 1 :content "foo"}
-                     {:type :assignment :line 1}
-                     {:type :interpolation-literal :line 1 :content "\"${bar}\""})]
-      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl))))))))
   (testing "We can lex out interpolation literals - raw"
     (let [hcl "foo = ${bar}"
           expected '({:type :keyword :line 1 :content "foo"}
                      {:type :assignment :line 1}
-                     {:type :interpolation-literal :line 1 :content "${bar}"})]
-      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl)))))))))
+                     {:type :template-literal :line 1 :content "${bar}"})]
+      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl))))))))
+  (testing "We DO NOT lex out interpolation literals in strings"
+    (let [hcl "foo = \"${bar}\""
+          expected '({:type :keyword :line 1 :content "foo"}
+                     {:type :assignment :line 1}
+                     {:type :string-literal :line 1 :content "${bar}"})]
+      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl))))))))
+  (testing "We DO NOT lex out interpolation literals in strings 2"
+    (let [hcl "foo = \"${bar} humbug\""
+          expected '({:type :keyword :line 1 :content "foo"}
+                     {:type :assignment :line 1}
+                     {:type :string-literal :line 1 :content "${bar} humbug"})]
+      (is (= expected (take 3 (drop 1 (:tokens (str->tokens hcl))))))))
+
+  (testing "We can lex out interpolation literals - more complex example"
+    (let [hcl "foo \"bar\"{
+                 baz = ${baz}
+                 qux = \"${qux} world\"
+               }"
+          expected {:lines 4
+                    :tokens [{:type :sof :line 1}
+                             {:type :keyword :line 1 :content "foo"}
+                             {:type :string-literal :line 1 :content "bar"}
+                             {:type :scope-open, :line 1}
+                             {:type :keyword :line 2 :content "baz"}
+                             {:type :assignment :line 2}
+                             {:type :template-literal :line 2 :content "${baz}"}
+                             {:type :keyword :line 3 :content "qux"}
+                             {:type :assignment :line 3}
+                             {:type :string-literal :line 3 :content "${qux} world"}
+                             {:type :scope-close, :line 4}
+                             {:type :eof, :line 4}]}]
+      (is (= expected (str->tokens hcl))))))
